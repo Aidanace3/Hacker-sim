@@ -119,4 +119,27 @@ private:
     std::string generateRandomNameWithID(const std::string &id) {
         std::seed_seq seed(id.begin(), id.end());
         randomEngine.seed(seed);
-        std::vector<std::string> first
+        std::vector<std::string> first;
+        std::vector<std::string> firstNames = { "John", "Jane", "Michael", "Emily", "William", "Olivia", "James", "Sophia", "Aaron" };
+        std::vector<std::string> lastNames = { "Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "West" };
+        return firstNames[randomEngine() % firstNames.size()] + " " + lastNames[randomEngine() % lastNames.size()];
+    }
+
+    void showInvalidInputPopup() {
+        std::cout << "Invalid input. Please enter a valid command." << std::endl;
+    }
+
+    void showBanPopup(const std::string &message = std::string()) {
+        if (message.empty()) {
+            std::cout << "You are banned until " << std::ctime(&banEndTime);
+        } else {
+            std::cout << message << std::endl;
+        }
+    }
+};
+
+int main() {
+    HackerApp app;
+    app.simulateEnter();
+    return 0;
+}
