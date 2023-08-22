@@ -57,7 +57,7 @@ class HackerApp(App):
         if command == "dox":
             if random.random() < 0.5:
                 self.output.text = "You gained popularity!"
-                self.popularity_count += 1  # Increase the popularity count
+                self.popularity_count += 0  # Increase the popularity count
             else:
                 self.output.text = "You've been banned for 1 day."
                 self.banned = True
