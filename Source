@@ -1,0 +1,123 @@
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.textinput import TextInput
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.clock import Clock
+from kivy.utils import get_color_from_hex
+from kivy.storage.jsonstore import JsonStore
+import random
+import time
+
+class HackerApp(App):
+    def build(self):
+        self.layout = BoxLayout(orientation='vertical')
+        
+        self.text_input = TextInput(font_size=22, multiline=True)
+        self.layout.add_widget(self.text_input)
+        self.background_color = get_color_from_hex("#000000")  # Black background
+        self.foreground_color = get_color_from_hex("#00FF00")  # Green text        
+        
+        self.output = TextInput(font_size=30, readonly=True)
+        self.layout.add_widget(self.output)
+        self.background_color = get_color_from_hex("#000000")  # Black background
+        self.foreground_color = get_color_from_hex("#00FF00")  # Green text      
+        
+        self.simulate_button = Button(text='Simulate Enter')
+        self.simulate_button.bind(on_release=self.simulate_enter)
+        self.layout.add_widget(self.simulate_button)
+        
+        self.banned = False
+        self.ban_end_time = 0
+        
+        self.chance_multiplier = 1
+        
+        self.store = JsonStore('hacker_app_data.json')
+        if 'ban_data' in self.store:
+            ban_data = self.store.get('ban_data')
+            self.banned = ban_data['banned']
+            self.ban_end_time = ban_data['ban_end_time']
+        
+        self.popularity_count = 0  # Initialize the popularity count
+
+        return self.layout
+    
+    def simulate_enter(self, instance):
+        self.execute_command(None)  # Simulate pressing Enter
+
+    def execute_command(self, instance):
+        command = self.text_input.text.strip().lower()
+        
+        if self.banned and time.time() < self.ban_end_time:
+            if command == "dox":
+                self.show_ban_popup("You are banned and cannot use 'dox' until ban period ends.")
+                return
+        
+        if command == "dox":
+            if random.random() < 0.5:
+                self.output.text = "You gained popularity!"
+                self.popularity_count += 1  # Increase the popularity count
+            else:
+                self.output.text = "You've been banned for 1 day."
+                self.banned = True
+                self.ban_end_time = time.time() + 86400  # 1 day in seconds
+        elif command == "popcheck":
+            self.output.text = f"Popularity: {self.popularity_count}"  # Display the popularity count
+        elif self.is_valid_id(command):
+            self.output.text = f"Name: {self.generate_random_name_with_id(command)}"
+        elif command == "getip":
+            self.output.text = f"IP: {self.generate_fake_ip()}"
+        elif self.is_valid_fake_ip(command):
+            self.output.text = f"Location: {self.generate_fake_location()}"
+        elif command == "help":
+        	self.output.text = f'dox: get 1 pop, may get banned, getip: gets fake ip, any 7 digit code: gives you the corresponding name, breakin followed by an id gives you tons of info'
+        else:
+            self.show_invalid_input_popup()
+
+    def generate_fake_ip(self):
+        return f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(1, 255)}"
+
+    def generate_fake_location(self):
+        return f"{random.choice(['New York', 'Los Angeles', 'Chicago', 'Houston', 'Miami'])}, {random.choice(['NY', 'CA', 'IL', 'TX', 'FL'])}"
+
+    def is_valid_fake_ip(self, ip):
+        parts = ip.split('.')
+        return len(parts) == 4 and all(part.isdigit() and 0 <= int(part) <= 255 for part in parts)
+
+    def is_valid_id(self, id):
+        return len(id) == 7 and all(c.isalnum() for c in id)
+
+    def generate_random_name_with_id(self, id):
+        random.seed(id)  # Set seed based on ID
+        first_name = random.choice(['John', 'Jane', 'Michael', 'Emily', 'William', 'Olivia', 'James', 'Sophia',  'Aaron' ])
+        last_name = random.choice(['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Miller', 'Davis', 'Garcia', 'West'])
+        return f"{first_name} {last_name}"
+    
+    def show_invalid_input_popup(self):
+        content = BoxLayout(orientation='vertical')
+        popup_label = Label(text='Invalid input. Please enter a valid command.', color=get_color_from_hex("#FF0000"))
+        content.add_widget(popup_label)
+        
+        popup = Popup(title='Invalid Input', content=content, size_hint=(None, None), size=(400, 200))
+        popup.open()
+
+    def show_ban_popup(self, message=None):
+        if message is None:
+            message = f"You are banned until {time.ctime(self.ban_end_time)}"
+        
+        content = BoxLayout(orientation='vertical')
+        popup_label = Label(text=message, color=get_color_from_hex("#FF0000"))
+        content.add_widget(popup_label)
+        
+        popup = Popup(title='Banned', content=content, size_hint=(None, None), size=(400, 200))
+        popup.open()
+
+    def save_data(self):
+        self.store.put('ban_data', banned=self.banned, ban_end_time=self.ban_end_time)
+
+    def on_stop(self):
+        self.save_data()
+
+if __name__ == '__main__':
+    HackerApp().run()
